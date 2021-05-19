@@ -1,0 +1,124 @@
+Match (n)
+DETACH DELETE n;
+
+
+
+1)LOAD CSV WITH HEADERS FROM 'file:///Equipments_Node.csv' AS line
+MERGE (child:Equipment { id: line.HieararchyNode_PK_Id ,Equipment_PK_Id:line.Equipment_PK_Id,name:line.SourceAssetName,
+SourceAssetType:line.SourceAssetType,InstanceName:line.InstanceName,ApplicationType:line.ApplicationType,
+VersionNumber:line.VersionNumber,Parent_HieararchyNode_PK_Id:line.Parent_HieararchyNode_PK_Id,
+Parent_Equipment_PK_Id:line.Parent_Equipment_PK_Id})
+ON MATCH SET child.name = line.SourceAssetName
+ON CREATE SET child.name = line.SourceAssetName
+MERGE (parent:Equipment { id: line.Parent_HieararchyNode_PK_Id })
+MERGE (child)-[:PARENT]->(parent)
+
+
+
+2)LOAD CSV WITH HEADERS FROM "file:///Equipments_MasterNode.csv" AS csvLine
+MERGE (assetType:AssetType {name: csvLine.AssetType})
+CREATE (master:EquipmentMaster {name: csvLine.MasterAssetName,id: csvLine.id})
+CREATE (master)-[:ASSET_TYPE]->(assetType)
+
+
+
+3)LOAD CSV WITH HEADERS FROM "file:///Equipment_Mapping.csv" AS csvLine
+MATCH (p:Equipment {id: csvLine.Equipmentid}), (m:EquipmentMaster {id: csvLine.MasterEquipmentid})
+CREATE (p)-[:MAPS_TO]->(m)
+
+
+
+---Create new  relationships between AssetType entities for the Master AssetTypes
+
+
+MATCH(a:AssetType),(b:AssetType)
+WHERE a.name = 'Equipment' AND b.name = 'Unit'
+CREATE (a)-[r:CHILD_OF]->(b)
+RETURN a,r,b
+
+
+MATCH(a:AssetType),(b:AssetType)
+WHERE a.name = 'Unit' AND b.name = 'Area'
+CREATE (a)-[r:CHILD_OF]->(b)
+RETURN a,r,b
+
+
+
+MATCH(a:AssetType),(b:AssetType)
+WHERE a.name = 'Area' AND b.name = 'Plant'
+CREATE (a)-[r:CHILD_OF]->(b)
+RETURN a,r,b
+
+
+
+MATCH(a:AssetType),(b:AssetType)
+WHERE a.name = 'Plant' AND b.name = 'Site'
+CREATE (a)-[r:CHILD_OF]->(b)
+RETURN a,r,b
+
+
+
+MATCH(a:AssetType),(b:AssetType)
+WHERE a.name = 'Site' AND b.name = 'Enterprise'
+CREATE (a)-[r:CHILD_OF]->(b)
+RETURN a,r,b
+
+
+---Create New Labels 
+
+MATCH (eq:Equipment {ApplicationType :"OM"}) 
+set eq:OM
+
+
+MATCH (eq:Equipment {ApplicationType :"M&R"}) 
+set eq:M&R
+
+
+MATCH (eq:Equipment {ApplicationType :"Sentinel"}) 
+set eq:Sentinel
+
+
+
+----------------------------Other Queries ---------------------------------------------------
+
+
+--Filter the records on ApplicationType and return the records with ApplicationType = "XXX" where XXX = "MR"/"OM"/"Sentinel"
+
+MATCH (p:Equipment {ApplicationType: "OM"}) Return p;
+MATCH (p:Equipment {ApplicationType: "M&R"}) Return p;
+MATCH (p:Equipment {ApplicationType: "Sentinel"}) Return p;
+
+
+--filter the records on a property and return  another property from the result set
+
+MATCH (p:Equipment {ApplicationType:"OM"})
+RETURN p.name;
+
+
+--- Filter records based on relation between Equipment and EquipmentMaster and on a particular EquipmentMaster Name 
+
+MATCH (p:Equipment)-[rel:MAPS_TO]->(m:EquipmentMaster {name: 'Plant_Master_2'})
+RETURN p, rel, m
+
+--- Filter records based on relation between Equipment and EquipmentMaster and on a particular EquipmentMaster Name and in this case "Eq_Master_2"
+
+MATCH (p:Equipment)-[rel:MAPS_TO]->(m:EquipmentMaster {name: 'Eq_Master_2'})
+RETURN p, rel, m
+
+
+---Filter records on Equipment by "name" or any other property like "ApplicationType"
+---In the above example Equipment joins to itself in the hierarchy structure 
+
+MATCH (p:Equipment)-[rel:PARENT]->(m:Equipment {name: 'Unit3'})
+RETURN p, rel, m
+
+
+MATCH (p:Equipment)-[rel:PARENT]->(m:Equipment {name: 'Enterprise',ApplicationType: 'OM'})
+RETURN p, rel, m
+
+--The other way of getting the same data like in the above query , however this time we are using a where clause instead 
+MATCH (p:Equipment)-[rel:PARENT]->(m:Equipment) 
+Where m.name = "Enterprise" and m.ApplicationType ="OM"
+RETURN p, rel, m
+
+
