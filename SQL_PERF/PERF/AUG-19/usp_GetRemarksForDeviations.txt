@@ -1,0 +1,23 @@
+declare @p1 dbo.ActivityList
+insert into @p1 values('5A52AAC3-B4E3-4504-A8BC-3F324EB73A62')
+insert into @p1 values('EBD84515-3097-4B03-930C-F070AD58C168')
+insert into @p1 values('C0846F63-427B-4215-BE8A-B54B2C45F3FC')
+insert into @p1 values('B1D19684-41EE-463D-B680-B636C9575C4C')
+insert into @p1 values('BFCBC349-ADEE-437B-9612-870DB926B779')
+insert into @p1 values('F5785576-BD0B-4B83-AA37-4DE717AAD0E7')
+insert into @p1 values('01B59466-5CC6-4C72-82A4-7E65FE45A910')
+insert into @p1 values('FAF720A0-CFC7-45B2-ABC6-A0027373F158')
+insert into @p1 values('09A10B36-A23C-471D-81F6-D616742A17E7')
+insert into @p1 values('CC9691F3-36CE-4751-884B-CF8BD5698FD3')
+insert into @p1 values('6B58BCC5-4B12-42E9-A8B9-8A27985578A2')
+insert into @p1 values('21237135-87AC-4CA1-939E-A7A0FA7AD56C')
+insert into @p1 values('689E7DA7-6B3A-4017-818F-07271B8C376C')
+insert into @p1 values('1442BF27-5038-4051-8F1C-F683C6F58C93')
+insert into @p1 values('EA62AF68-6BBD-4314-B535-19083B9D3669')
+insert into @p1 values('B4EE17A6-E88F-4ABD-BE2F-CB53AFD64AEF')
+insert into @p1 values('3CEA57E3-FA4C-4918-AF33-DB9CFC9001F9')
+insert into @p1 values('B6A1B852-A15E-4509-A5AD-339A05A159C3')
+insert into @p1 values('C298850E-8EF2-47AD-A05A-DC40A0151D76')
+insert into @p1 values('FBFBE1DD-7F2F-498A-94CD-786C666CB981')
+
+exec [dbo].[usp_GetRemarksForDeviations] @tableActivity=@p1,@isLatestRemarks=1,@systemRemarks=default,@remarksBy=default
