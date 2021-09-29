@@ -1,0 +1,16 @@
+-- query to get possible missing Foreign keys 
+SELECT  C.TABLE_SCHEMA,C.TABLE_NAME,C.COLUMN_NAME
+FROM    INFORMATION_SCHEMA.COLUMNS C          
+        INNER Join INFORMATION_SCHEMA.TABLES T            
+          ON C.TABLE_NAME = T.TABLE_NAME    
+          And T.TABLE_TYPE = 'Base Table'
+          AND T.TABLE_SCHEMA = C.TABLE_SCHEMA        
+        LEFT Join INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE U            
+          ON C.TABLE_NAME = U.TABLE_NAME            
+          And C.COLUMN_NAME = U.COLUMN_NAME
+          And U.TABLE_SCHEMA = C.TABLE_SCHEMA
+WHERE   U.COLUMN_NAME IS Null          
+        And C.COLUMN_NAME Like '%id'
+		AND C.TABLE_NAME NOT LIKE '%_bckup%' AND C.TABLE_NAME NOT LIKE '%1'
+ORDER BY C.TABLE_SCHEMA, C.TABLE_NAME, C.COLUMN_NAME
+GO
