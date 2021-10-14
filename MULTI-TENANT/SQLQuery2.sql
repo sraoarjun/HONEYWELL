@@ -116,8 +116,8 @@ GO
 select * from Site_01.employees
 select * from Site_02.employees
 
-exec Site_01.sp_select_employees -- Needs to be called from the User for Site 1 only (Will fail for all other Users except dbo users)
-exec Site_02.sp_select_employees -- Needs to be called from the User for Site 2 only (Will fail for all other Users except dbo users)
+exec Site_01.sp_select_employees 'usr_Site_01'-- Needs to be called from the User for Site 1 only (Will fail for all other Users except dbo users)
+exec Site_02.sp_select_employees 'usr_Site_02' -- Needs to be called from the User for Site 2 only (Will fail for all other Users except dbo users)
 
 
 
@@ -162,3 +162,13 @@ BEGIN
 	REVERT 
 END 
 GO
+
+
+
+---- Grant Access to Common Schema for the users
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::sch_cmn TO Usr_Site_01
+GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::sch_cmn TO Usr_Site_02
+
+---- Deny Access to Common Schema for the users
+DENY SELECT, INSERT, UPDATE, DELETE ON SCHEMA::sch_cmn TO Usr_Site_01
+DENY SELECT, INSERT, UPDATE, DELETE ON SCHEMA::sch_cmn TO Usr_Site_02
