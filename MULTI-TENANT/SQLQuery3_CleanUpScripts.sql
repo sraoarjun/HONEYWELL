@@ -1,3 +1,7 @@
+/*
+Clean up scripts to drop all the relavent objects and their dependencies 
+*/
+
 -- Drop the Procedures
 DROP PROCEDURE IF EXISTS Site_01.sp_select_employees
 GO
