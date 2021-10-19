@@ -120,7 +120,6 @@ SELECT SUSER_NAME(),USER_NAME()  as UserName
 
 
 -- Populate some data for the user 
---drop table if exists Equipments 
 
 create table Equipments (id int primary key identity(1,1) , Facility_Name varchar(100))
 declare @prefix varchar(100) = 'Site_01'
