@@ -2,10 +2,11 @@ BEGIN
 
 declare @SQL varchar(4000)
 declare @msg varchar(500)
+/*Parameter schemaName*/
 declare @SchemaName varchar(50)= 'Site_04' -- Site_Name (Schema_Name) as a parameter
-declare @debug_flag varchar(1)= 'n'-- Put 'Y' if you want to only print the executing statement , else any other character would actually drop the objects 
+declare @debug_flag varchar(1)= 'n'-- Put 'y' if you want to only print the executing statement , else any other character would actually drop the objects 
 declare @full_text_catalog_name varchar(100)= '_catalog_'+@schemaName -- Look for FullTextCatalogs with the prefix "_catalog_{Schema_Name}" 
-
+declare @sqlagent_job_name varchar(250)= '_'+@schemaName
 
 IF OBJECT_ID('tempdb..#dropObjectsCode') IS NOT NULL DROP TABLE #dropObjectsCode
 CREATE TABLE #dropObjectsCode
@@ -84,7 +85,14 @@ SELECT
 	'drop fulltext catalog [' + [name] + ']' FROM sys.sysfulltextcatalogs
 WHERE 
 	SUBSTRING([name],CHARINDEX(@full_text_catalog_name,[name]),DATALENGTH([name])-CHARINDEX(@full_text_catalog_name,[name])+1) = @full_text_catalog_name
-	
+
+
+-- Drop SQLAgent Jobs with the name ending "_{SchemaName}"
+INSERT INTO #dropObjectsCode
+SELECT 
+		'EXEC msdb.dbo.sp_delete_job @job_name = N'''+[name]+'''' from msdb.dbo.sysjobs  
+where 
+	 SUBSTRING([name],CHARINDEX(@sqlagent_job_name,[name]),DATALENGTH([name])-CHARINDEX(@sqlagent_job_name,[name])+1) = @sqlagent_job_name	
 
 --- Delete duplicates if any 
 ;WITH CTE AS
@@ -92,7 +100,6 @@ WHERE
 SELECT *,ROW_NUMBER() OVER (PARTITION BY SQLstatement ORDER BY ID) AS RN
 FROM #dropObjectsCode
 )
-
 DELETE FROM CTE WHERE RN<>1
 
 
