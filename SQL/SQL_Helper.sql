@@ -1,3 +1,27 @@
+--- Get the identity columns for any give table by passing in the schema name and table name
+
+declare 
+	@schemaname varchar(100) = 'sales'
+	,@tablename varchar(100) = 'SalesOrderDetail_new_Archive'
+
+SELECT   OBJECT_NAME(OBJECT_ID) AS TABLENAME, 
+             NAME AS COLUMNNAME, 
+             SEED_VALUE, 
+             INCREMENT_VALUE, 
+             LAST_VALUE, 
+             IS_NOT_FOR_REPLICATION 
+FROM     
+	SYS.IDENTITY_COLUMNS 
+WHERE 
+	OBJECT_SCHEMA_NAME(object_id) = @schemaname
+AND 
+	OBJECT_NAME(OBJECT_ID) = @tablename
+
+GO
+
+
+
+------- Get the Row counts for a table 
 drop table if exists #tempA
 drop table if exists #tempB
 GO
