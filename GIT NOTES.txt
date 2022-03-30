@@ -1,0 +1,5 @@
+1) open git bash 
+
+2) Type cd C:/ARJUN/Git/Source_Code
+
+3) This will take you to the source code repo.
