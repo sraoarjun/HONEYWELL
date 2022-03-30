@@ -1,9 +1,12 @@
-USE [HwlAssets_EPM]
+USE [Honeywell.MES.Operations.DataModel.OperationsDB]
 GO
+
 /*
 	Exec dbo.Sp_Arc_Insert_Into_Archive 'dbo','Equipments','Archival_DB','where Year(CreatedDate) = 2020'
 */
-ALTER PROCEDURE dbo.Sp_Arc_Insert_Into_Archive
+DROP PROCEDURE IF EXISTS dbo.Sp_Arc_Insert_Into_Archive
+GO
+CREATE PROCEDURE dbo.Sp_Arc_Insert_Into_Archive
 (
 	@schemaName varchar(100),
 	@tableName varchar (100),

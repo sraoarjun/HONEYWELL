@@ -45,3 +45,30 @@ select * from dbo.Archival_Storage_Options
 select * from dbo.Archival_Config
 select * from dbo.Archival_Schedule_config
 select * from dbo.Archival_Error_Log
+
+
+
+
+
+----TRIGGERS ---STARTS
+CREATE TRIGGER [dbo].[TR_INSERT_ARCHIVAL_CONFIG] ON [dbo].[ARCHIVAL_CONFIG] 
+AFTER INSERT
+AS            
+BEGIN
+    INSERT INTO [dbo].[ARCHIVAL_SCHEDULE_CONFIG] (ARCHIVAL_CONFIG_ID,NEXT_EXECUTION_DATE)
+	SELECT ARCHIVAL_CONFIG_ID ,CAST(GETDATE() AS DATE) from INSERTED
+	
+END
+GO
+
+
+
+CREATE TRIGGER dbo.[TR_UPDATE_ARCHIVAL_CONFIG] ON [dbo].[ARCHIVAL_CONFIG] 
+AFTER UPDATE
+AS            
+BEGIN
+   
+		EXEC [dbo].[SP_RECONCILE_NEXT_EXECUTION_DATE]
+	
+END
+GO

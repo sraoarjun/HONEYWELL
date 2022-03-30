@@ -153,3 +153,13 @@ select
 	getdate()
 
 GO
+
+USE [HwlAssets_EPM]
+GO
+SET IDENTITY_INSERT [dbo].[Archival_Error_Log] ON 
+
+INSERT [dbo].[Archival_Error_Log] ([archival_error_log_id], [archival_config_id], [error_description], [error_date]) VALUES (1, 1, N'Invalid object name ''dbo.RegUsers'' ', CAST(N'2022-03-27T15:39:08.947' AS DateTime))
+INSERT [dbo].[Archival_Error_Log] ([archival_error_log_id], [archival_config_id], [error_description], [error_date]) VALUES (2, 1, N'[Error msg] - string or binary data would be truncated,[Errror procedure] -sp_insertArchival_Data, [Error Line] - 40', CAST(N'2022-03-28T15:39:08.947' AS DateTime))
+SET IDENTITY_INSERT [dbo].[Archival_Error_Log] OFF
+GO
+

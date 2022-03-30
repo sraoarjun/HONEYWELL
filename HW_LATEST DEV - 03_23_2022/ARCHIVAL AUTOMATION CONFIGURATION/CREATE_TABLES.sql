@@ -1,3 +1,15 @@
+DROP TABLE IF EXISTS dbo.Archival_Error_Log
+GO
+DROP TABLE IF EXISTS dbo.Archival_Schedule_Config
+GO
+DROP TABLE IF EXISTS dbo.Archival_Config 
+GO
+DROP TABLE IF EXISTS dbo.Archival_Storage_Options
+GO
+
+
+
+
 DROP TABLE IF EXISTS dbo.Archival_Storage_Options
 GO
 CREATE TABLE dbo.Archival_Storage_Options

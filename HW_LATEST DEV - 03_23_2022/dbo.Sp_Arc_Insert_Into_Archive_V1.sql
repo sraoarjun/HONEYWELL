@@ -1,9 +1,13 @@
-USE [HwlAssets_EPM]
+USE [Honeywell.MES.Operations.DataModel.OperationsDB]
 GO
 /*
-	Exec dbo.Sp_Arc_Insert_Into_Archive 'dbo','Equipments','Archival_DB','where Year(CreatedDate) = 2020','Equipment_PK_ID'
+Exec dbo.Sp_Arc_Insert_Into_Archive 'dbo','StandingOrdersHistory','Archival_DB','ActualStartTime < DATEADD(Year,-5,GETDATE())','StandingOrder_PK_ID'
+
+Exec dbo.Sp_Arc_Insert_Into_Archive 'dbo','Activities','Archival_DB','StartTime < DATEADD(Year,-5,GETDATE())','Activity_PK_ID'
 */
-ALTER PROCEDURE dbo.Sp_Arc_Insert_Into_Archive
+DROP PROCEDURE dbo.Sp_Arc_Insert_Into_Archive
+GO
+CREATE PROCEDURE dbo.Sp_Arc_Insert_Into_Archive
 (
 	@schemaName varchar(100),
 	@tableName varchar (100),
@@ -23,13 +27,13 @@ create table  #tmp  (id int, tablename varchar(256), lvl int, ParentTable varcha
 declare @tbl varchar(250) = @schemaName +'.'+ @tableName
 
 insert into #tmp 
-exec dbo.usp_SearchFK @table=@tbl, @debug=0;
---exec dbo.usp_SearchFK @table='dbo.Equipments', @debug=0;
+exec dbo.sp_Search_Fk @table=@tbl, @debug=0;
 
 --select * from #tmp
 declare @where varchar(max) =null -- if @where clause is null or empty, it will delete tables as a whole with the right order
 --declare @where varchar(max) ='where Year(CreatedDate) = 2020' -- if @where clause is null or empty, it will delete tables as a whole with the right order
 set @where = @filters
+
 
 declare @curFK cursor, @fk_object_id int;
 declare @sqlcmd varchar(max)='', @crlf char(2)=char(0x0d)+char(0x0a);
@@ -69,10 +73,12 @@ begin
 	begin
 		set @i=0;
 		if @lvl =0
+		
 		begin -- this is the root level
 			select @sqlcmd = 'insert into '+@archival_database+'.'+tablename +  @crlf +
 			'select ' + tablename + '.* from ' + tablename from #tmp where id = @id;
-		end -- this is the roolt level
+		end -- this is the root level
+						
 
 		while @i < @lvl
 		begin -- while
@@ -119,7 +125,6 @@ begin
 		end --while
 		--print @sqlcmd + @crlf + @where + ';';
 		--set @sqlcmd = @sqlcmd + @crlf + @where + ';';
-		
 		set @sqlcmd = @sqlcmd + @crlf + ' where ' + @tableName +'.'+ @pk_column_name + ' in (' + 'select ID from tempdb..Staging_IDs)' + @crlf 
 		print @sqlcmd
 		--exec (@sqlcmd)
