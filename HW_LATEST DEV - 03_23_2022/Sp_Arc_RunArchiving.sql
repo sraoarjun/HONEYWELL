@@ -2,6 +2,8 @@ USE [HwlAssets_EPM]
 GO
 
 
+DROP PROCEDURE IF EXISTS dbo.Sp_Arc_RunArchiving
+GO
 CREATE PROCEDURE dbo.Sp_Arc_RunArchiving
 AS
 BEGIN
@@ -85,21 +87,21 @@ set @pk_columnname = (select C.COLUMN_NAME FROM
 									 KU.TABLE_NAME
 									,KU.ORDINAL_POSITION
 									
-							Print 'Primary Key Name - '  + @pk_columnname +','+' Primary Key Column DataType '+  @PK_column_dataType
+							--Print 'Primary Key Name - '  + @pk_columnname +','+' Primary Key Column DataType '+  @PK_column_dataType
 							
 						
 						-- If the PK is an INTEGER Column
 						IF @PK_column_dataType = 'int' -- IF PK  is of Integer Data Type
 						BEGIN
 								---- Create a staging table to Hold candidate ids
-								PRINT 'Creating staging table with INT as the PK'
+								--PRINT 'Creating staging table with INT as the PK'
 								--EXEC ('Create Table tempdb..' + @tablename+'_Staging(ID int PRIMARY KEY)');
 								CREATE TABLE tempdb..Staging_IDs(ID int PRIMARY KEY)
 							   
                         END
 							ELSE  -- if the PK is a UNIQUEIDENTIFIER
 							BEGIN
-								PRINT 'Creating staging table with UNIQUEIDENTIFIER as the PK'
+								--PRINT 'Creating staging table with UNIQUEIDENTIFIER as the PK'
 								CREATE TABLE tempdb..Staging_IDs (ID uniqueidentifier PRIMARY KEY);
 							END
 
@@ -117,7 +119,7 @@ set @pk_columnname = (select C.COLUMN_NAME FROM
 
 							set @insert_sql = @insert_sql + @predicate_sql
 
-								print @insert_sql
+								--print @insert_sql
 								exec (@insert_sql);
 
 								if (select count(1) as cnt from tempdb..Staging_IDs) = 0
@@ -127,16 +129,16 @@ set @pk_columnname = (select C.COLUMN_NAME FROM
 								
 							BEGIN TRY
 								--BEGIN TRAN
-									PRINT 'Section - Inserting into Archive'										
+									--PRINT 'Section - Inserting into Archive'										
 									EXEC dbo.Sp_Arc_Insert_Into_Archive @schemaname,@tablename,@destination_database_name,@filters,@pk_columnname
-									PRINT 'Section - Delete from Source'
+									--PRINT 'Section - Delete from Source'
 									EXEC dbo.sp_Arc_Delete_from_source @schemaname,@tablename,@filters,@pk_columnname
 
 								--COMMIT TRAN
 							END TRY 
 							BEGIN CATCH 
 							declare @error_msg varchar(max)
-								PRINT 'Section - Logging error'
+								--PRINT 'Section - Logging error'
 								SET @error_msg = 'Error Procedure - ' + ERROR_PROCEDURE() + ' '+ 'Error Line - ' + cast(ERROR_LINE() as varchar) + ' ' + 'Error Message - ' + ERROR_MESSAGE()
 								--ROLLBACK TRAN
 								INSERT INTO dbo.Archival_Error_Log(archival_config_id,error_description,error_date)

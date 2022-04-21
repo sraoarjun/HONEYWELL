@@ -3,6 +3,8 @@ GO
 /*
 Exec dbo.Sp_Arc_Insert_Into_Archive 'dbo','StandingOrdersHistory','Archival_DB','ActualStartTime < DATEADD(Year,-5,GETDATE())','StandingOrder_PK_ID'
 
+Exec dbo.Sp_Arc_Insert_Into_Archive 'dbo','Equipments','Archival_DB','where Year(CreatedDate) = 2020','Activity_PK_ID'
+
 Exec dbo.Sp_Arc_Insert_Into_Archive 'dbo','Activities','Archival_DB','StartTime < DATEADD(Year,-5,GETDATE())','Activity_PK_ID'
 */
 DROP PROCEDURE dbo.Sp_Arc_Insert_Into_Archive
