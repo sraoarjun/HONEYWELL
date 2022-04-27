@@ -51,3 +51,53 @@ and ShiftSummaryHistory.ArchiveFileName is not null', NULL, 1, 1, NULL, NULL, NU
 SET IDENTITY_INSERT [dbo].[Archival_Config] OFF
 
 GO
+
+
+
+
+
+SET IDENTITY_INSERT [dbo].[Archival_Config] ON 
+
+INSERT [dbo].[Archival_Config] ([archival_config_id], [description_text], [table_schema], [table_name], [source_database_name], [destination_database_name], [batch_size], [PurgeOnly],[filters], [archival_status], [is_enabled], [archival_storage_options_id], [job_start_time], [job_end_time], [schedule_frequency_in_days], [db_datetime_last_updated]) VALUES (6, N'Archiving the ShiftSummaryHistory table', N'dbo', N'ShiftSummaryHistory', N'Operations_DB', N'Archival_DB', 1000,1, N' where Shift_EndTime < {Date_Parameter}', NULL, 1, 1, NULL, NULL, NULL, CAST(N'2022-04-21T19:16:53.093' AS DateTime))
+
+SET IDENTITY_INSERT [dbo].[Archival_Config] OFF
+
+GO
+
+
+--- Lookup Settings 
+
+
+--Whether the purge operqtion is enabled or not (ON/OFF)
+INSERT INTO dbo.Lookups(Name,Description,Value,DisplayName,Application,Asset,Lookup_PK_ID,LookupType_PK_ID,LookupValueDataType,ApplicationDisplayName)
+SELECT 
+
+	'PurgeOperation_ON_OFF',
+	'Whether the Purge is enabled or not',
+	'ON',
+	'PurgeOperation_ON_OFF',
+	'ALL',
+	null ,
+	NEWID(),
+	'C77C866E-B81D-4A2C-BFC8-BB253E7CEDFD',
+	null,
+	'ALL'
+
+GO
+
+-- ShiftSummaryHistory Purge setting
+INSERT INTO dbo.Lookups(Name,Description,Value,DisplayName,Application,Asset,Lookup_PK_ID,LookupType_PK_ID,LookupValueDataType,ApplicationDisplayName)
+SELECT 
+
+	'ShiftSummaryHistory_Data_Retention_Days',
+	'The number of days for which the shift summary histtory related data is retained in the table. The default value is 1825 (5 years). The older data is delete from the history table.',
+	'1825',
+	'ShiftSummaryHistory_Data_Retention_Days',
+	'Logbook',
+	null ,
+	NEWID(),
+	'C77C866E-B81D-4A2C-BFC8-BB253E7CEDFD',
+	null,
+	'Logbook'
+
+GO

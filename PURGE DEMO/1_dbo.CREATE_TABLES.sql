@@ -33,6 +33,7 @@ CREATE TABLE dbo.Archival_Config
 	destination_database_name varchar(100),
 	batch_size int ,
 	PurgeOnly bit,
+	LookupName varchar(200),
 	filters varchar(4000),
 	archival_status tinyint,
 	is_enabled bit ,
