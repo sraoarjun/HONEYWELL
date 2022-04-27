@@ -13,8 +13,6 @@ GO
 CREATE PROCEDURE dbo.Sp_Arc_RunArchiving
 AS
 BEGIN
-
-
 declare @source_database_name varchar(200)
 declare @destination_database_name varchar(200)
 declare @tablename varchar(500)  
@@ -36,13 +34,26 @@ declare @pk_columnname varchar(100)=''
 declare @ExistsCount int = 0
 declare @PK_column_dataType varchar(100)
 declare @numOfRowsAffected int = 0
+declare @history_data_retention_days int 
+declare @history_data_retention_cut_off_date_string varchar(100)
+declare @purgeOperation_ON_OFF char(3)
+declare @lookupName varchar(250)
 
-set nocount on 
+SET NOCOUNT ON 
+
+
+set @purgeOperation_ON_OFF = (select [Value] from dbo.Lookups where name = 'PurgeOperation_ON_OFF')
+
+IF @purgeOperation_ON_OFF <> 'ON'
+BEGIN
+	PRINT 'Purge Operation has been set to OFF'
+	RETURN ;
+END 
 
 declare tableCursor cursor FAST_FORWARD FOR
 
 SELECT  
-	archival_config_id , table_schema,table_name,batch_size,PurgeOnly,filters,source_database_name,destination_database_name 
+	archival_config_id , table_schema,table_name,batch_size,PurgeOnly,filters,source_database_name,destination_database_name,LookupName 
 FROM 
 	dbo.Archival_Config
 where 
@@ -51,7 +62,8 @@ order by
 	archival_config_id asc;
 
 OPEN tableCursor
-FETCH NEXT FROM tableCursor INTO  @archival_config_id,@schemaname,@tablename,@batchsize,@PurgeOnly,@filters,@source_database_name ,@destination_database_name 
+FETCH NEXT FROM tableCursor INTO  
+	@archival_config_id,@schemaname,@tablename,@batchsize,@PurgeOnly,@filters,@source_database_name ,@destination_database_name,@lookupName 
 
 WHILE @@FETCH_STATUS = 0
           BEGIN
@@ -107,28 +119,29 @@ set @pk_columnname = (select distinct C.COLUMN_NAME FROM
 								CREATE TABLE tempdb..Staging_IDs (ID uniqueidentifier PRIMARY KEY);
 							END
 
+						SET @history_data_retention_days = (select Value from dbo.Lookups where Name = @lookupName)
+						SET @history_data_retention_cut_off_date_string = cast(DATEADD(DAY,-@history_data_retention_days,getdate()) as varchar)
+
+						SET @insert_sql = 'insert into tempdb..Staging_IDs'+
+										' select top ('+cast(@batchsize as varchar)+') '+@pk_columnname + ' from '+ @schemaname+ '.' + @tablename 
+									
+						SET @predicate_sql = case when @filters is null then ' where CreatedTime >= (select isnull(max (CreatedTime),''1900-01-01'') from ' +@destination_database_name +'.'++@schemaname+ '.' + @tablearchive + ')'+' order by CreatedTime' 
+								else ' ' + @filters end 
+
+						SET @insert_sql = @insert_sql + replace(@predicate_sql,'{Date_Parameter}',''''+@history_data_retention_cut_off_date_string+'''')
+
 
 							---- Process the records  (Archiving of the records starts here)
 					WHILE (1=1)
 						BEGIN
-							TRUNCATE TABLE tempdb..Staging_IDs
+								TRUNCATE TABLE tempdb..Staging_IDs
+								--PRINT @insert_sql
+								EXEC (@insert_sql);
 
-							SET @insert_sql = 'insert into tempdb..Staging_IDs'+
-										' select top ('+cast(@batchsize as varchar)+') '+@pk_columnname + ' from '+ @schemaname+ '.' + @tablename 
-									
-							set @predicate_sql = case when @filters is null then ' where CreatedTime >= (select isnull(max (CreatedTime),''1900-01-01'') from ' +@destination_database_name +'.'++@schemaname+ '.' + @tablearchive + ')'+' order by CreatedTime' 
-									--else ' where ' + @filters end 
-									else ' ' + @filters end 
-
-							set @insert_sql = @insert_sql + @predicate_sql
-
-								--print @insert_sql
-								exec (@insert_sql);
-
-								if (select count(1) as cnt from tempdb..Staging_IDs) = 0
-								begin 
-									break ;
-								end 
+								IF (select count(1) as cnt from tempdb..Staging_IDs) = 0
+								BEGIN 
+									BREAK ;
+								END 
 								
 							BEGIN TRY
 								--BEGIN TRAN
@@ -153,9 +166,16 @@ set @pk_columnname = (select distinct C.COLUMN_NAME FROM
 
 						END -- While Loop End
 					
-			 FETCH NEXT FROM tableCursor INTO @archival_config_id,@schemaname,@tablename,@batchsize,@purgeOnly,@filters,@source_database_name ,@destination_database_name 
+			 FETCH NEXT FROM tableCursor 
+				INTO 
+				@archival_config_id,@schemaname,@tablename,@batchsize,@purgeOnly,@filters,@source_database_name ,@destination_database_name,@lookupName 
 END-- Cursor Loop End
 CLOSE tableCursor
 DEALLOCATE tableCursor				
 							
 END 
+
+
+
+
+
