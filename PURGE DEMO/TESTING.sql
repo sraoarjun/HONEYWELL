@@ -31,7 +31,7 @@ select * from dbo.Archival_Config
 select * from dbo.Lookups where name like '%history%'
 
 
-update dbo.Lookups set Value  = 1940 where name = 'ShiftSummaryHistory_Data_Retention_Days'
+update dbo.Lookups set Value  = 1908 where name = 'ShiftSummaryHistory_Data_Retention_Days'
 
 select 
 	archival_config_id,table_schema,table_name,batch_size,PurgeOnly,filters,is_enabled,db_datetime_last_updated from dbo.Archival_Config 
@@ -45,11 +45,11 @@ select count(1) as cnt from dbo.ShiftSummaryDisplayHistory with (nolock) -- DBO 
 
 select count(1) as cnt from site1.ShiftSummaryDisplayHistory with (nolock) --- SITE 1 (schema)
 
- select DATEADD(day,-1940,getdate())
+ select DATEADD(day,-1908,getdate())
 
 select count(1) as cnt from dbo.ShiftSummaryHistory with (nolock) --- 
 
-select count(1) as cnt from dbo.ShiftSummaryHistory with (nolock) where Shift_EndTime < DATEADD(day,-1940,getdate())
+select count(1) as cnt from dbo.ShiftSummaryHistory with (nolock) where Shift_EndTime < DATEADD(day,-1908,getdate())
 
 
 
