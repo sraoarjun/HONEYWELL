@@ -40,9 +40,9 @@ GO
 /*
 SET IDENTITY_INSERT [dbo].[Archival_Config] ON 
 
-INSERT [dbo].[Archival_Config] ([archival_config_id], [description_text], [table_schema], [table_name], [source_database_name], [destination_database_name], [override_batch_size], [PurgeOnly],[filters], [archival_status], [is_enabled], [archival_storage_options_id], [job_start_time], [job_end_time], [schedule_frequency_in_days], [db_datetime_last_updated]) VALUES (2, N'Archiving the ShiftSummaryDisplayHistory table', N'dbo', N'ShiftSummaryDisplayHistory', N'Operations_DB', N'Archival_DB', 1000,1, N' LEFT JOIN ShiftSummaryHistory  ON ShiftSummaryDisplayHistory.ShiftSummaryDisplayHistory_PK_ID = ShiftSummaryHistory.ShiftSummaryHistory_PK_ID
+INSERT [dbo].[Archival_Config] ([archival_config_id], [description_text], [table_schema], [table_name], [source_database_name], [destination_database_name], [override_batch_size], [override_history_data_retention_days],[PurgeOnly],[filters],[LookupName], [archival_status], [is_enabled], [archival_storage_options_id], [job_start_time], [job_end_time], [schedule_frequency_in_days], [db_datetime_last_updated]) VALUES (2, N'Archiving the ShiftSummaryDisplayHistory table', N'dbo', N'ShiftSummaryDisplayHistory', N'Operations_DB', N'Archival_DB', 1000,null,1, N' LEFT JOIN ShiftSummaryHistory  ON ShiftSummaryDisplayHistory.ShiftSummaryDisplayHistory_PK_ID = ShiftSummaryHistory.ShiftSummaryHistory_PK_ID
 LEFT JOIN ShiftSummaryStatus ON  ShiftSummaryHistory.ShiftSummaryStatus_PK_ID = ShiftSummaryStatus.ShiftSummaryStatus_PK_ID
-and ShiftSummaryHistory.ArchiveFileName is not null', NULL, 1, 1, NULL, NULL, NULL, CAST(N'2022-04-21T19:16:53.093' AS DateTime))
+and ShiftSummaryHistory.ArchiveFileName is not null','ShiftSummaryHistory_Data_Retention_Days', NULL, 1, 1, NULL, NULL, NULL, CAST(N'2022-04-21T19:16:53.093' AS DateTime))
 
 SET IDENTITY_INSERT [dbo].[Archival_Config] OFF
 
