@@ -6,8 +6,10 @@ DROP TABLE IF EXISTS dbo.Archival_Config
 GO
 DROP TABLE IF EXISTS dbo.Archival_Storage_Options
 GO
+DROP TABLE IF EXISTS dbo.Archival_Execution_Log
+GO
 
-
+CREATE TABLE dbo.Archival_Execution_Log(id int identity(1,1) constraint pk_archival_execution_log primary key ,description_text varchar(4000),date_created datetime)
 
 
 DROP TABLE IF EXISTS dbo.Archival_Storage_Options
