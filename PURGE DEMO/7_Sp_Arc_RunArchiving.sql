@@ -19,7 +19,7 @@ declare @source_database_name varchar(200)
 declare @destination_database_name varchar(200)
 declare @tablename varchar(500)  
 declare @schemaname varchar(100)
-declare @batchsize int 
+declare @override_batchsize int 
 declare @override_history_data_retention_days int
 declare @archival_config_id int 
 declare @tablename_suffix varchar(100)= ''
@@ -42,6 +42,7 @@ declare @history_data_retention_cut_off_date_string varchar(100)
 declare @purgeOperation_ON_OFF char(3)
 declare @lookupName varchar(250)
 declare @error_msg varchar(max)
+declare @total_number_of_records_affected int = 0 
 
 SET NOCOUNT ON 
 
@@ -53,6 +54,17 @@ BEGIN
 	PRINT 'Purge Operation has been set to OFF'
 	RETURN ;
 END 
+
+
+CREATE TABLE 
+#temp_Archival_Execution_Log
+(	id int identity(1,1) primary key ,
+	schemaname varchar(100),
+	tablename varchar(500),
+	filters varchar(1000)
+)
+
+
 
 declare tableCursor cursor FAST_FORWARD FOR
 
@@ -66,12 +78,16 @@ order by
 	archival_config_id asc;
 
 OPEN tableCursor
-FETCH NEXT FROM tableCursor INTO  
-				@archival_config_id,@schemaname,@tablename,@batchsize,@override_history_data_retention_days,@PurgeOnly,@filters,@source_database_name,
-				@destination_database_name,@lookupName 
+FETCH NEXT FROM 
+			tableCursor 
+	INTO  
+								@archival_config_id,@schemaname,@tablename,@override_batchsize,@override_history_data_retention_days,@PurgeOnly,@filters,@source_database_name,
+@destination_database_name,@lookupName 
 
 WHILE @@FETCH_STATUS = 0
           BEGIN
+
+
 
 
 set @pk_columnname = (select distinct C.COLUMN_NAME FROM  
@@ -135,22 +151,29 @@ set @pk_columnname = (select distinct C.COLUMN_NAME FROM
 					)end 
 				) 
 				SET @history_data_retention_cut_off_date_string = cast(DATEADD(DAY,-@history_data_retention_days,getdate()) as varchar)
-				SET @batchsize = case when @batchsize is not null then @batchsize else (select Value from dbo.Lookups where Name = 'Batch_Size') end
+				SET @override_batchsize = case when @override_batchsize is not null then @override_batchsize else (select Value from dbo.Lookups where Name = 'Batch_Size') end
 				--section get all the lookup / configuration values  -- ENDS
 
 
 				SET @insert_sql = 'insert into tempdb..Staging_IDs'+
-								' select top ('+cast(@batchsize as varchar)+') '+@pk_columnname + ' from '+ @schemaname+ '.' + @tablename 
+								' select top ('+cast(@override_batchsize as varchar)+') '+@pk_columnname + ' from '+ @schemaname+ '.' + @tablename 
 									
-				SET @predicate_sql = case when @filters is null then ' where CreatedTime >= (select isnull(max (CreatedTime),''1900-01-01'') from '					+@destination_database_name +'.'++@schemaname+ '.' + @tablearchive + ')'+' order by CreatedTime' 
-									else ' ' + @filters end 
-
-				SET @insert_sql = @insert_sql + replace(@predicate_sql,'{Date_Parameter}',''''+@history_data_retention_cut_off_date_string+'''')
+				--SET @predicate_sql = case when @filters is null then ' where CreatedTime >= (select isnull(max (CreatedTime),''1900-01-01'') from '					+@destination_database_name +'.'++@schemaname+ '.' + @tablearchive + ')'+' order by CreatedTime' 
+				--					else ' ' + @filters end 
 
 
-							---- Process the records  (Archiving of the records starts here)
+				SET @predicate_sql = case when @filters is null then ' where 1=1'
+									else replace(@filters,'{Date_Parameter}',''''+@history_data_retention_cut_off_date_string+'''') end 
+
+				--SET @insert_sql = @insert_sql + replace(@predicate_sql,'{Date_Parameter}',''''+@history_data_retention_cut_off_date_string+'''')
+
+				SET @insert_sql = @insert_sql + @predicate_sql
+
+				SET @total_number_of_records_affected = 0;
+					---- Process the records  (Archiving of the records starts here)
 					WHILE (1=1)
 						BEGIN
+
 								TRUNCATE TABLE tempdb..Staging_IDs
 								--PRINT @insert_sql
 								EXEC (@insert_sql);
@@ -168,7 +191,9 @@ set @pk_columnname = (select distinct C.COLUMN_NAME FROM
 								END
 									EXEC dbo.sp_Arc_Delete_from_source @schemaname,@tablename,@filters,@pk_columnname
 									SET @numOfRowsAffected = (select count(1) as cnt from tempdb..Staging_IDs)-- Get the number of rows affected
+									SET @total_number_of_records_affected = @total_number_of_records_affected+ @numOfRowsAffected
 								--COMMIT TRAN
+
 							END TRY 
 							BEGIN CATCH 
 							
@@ -182,11 +207,26 @@ set @pk_columnname = (select distinct C.COLUMN_NAME FROM
 							PRINT 'Number of rows affected - ' + cast(@numOfRowsAffected as varchar(10))
 
 						END -- While Loop End
-					
-			 FETCH NEXT FROM tableCursor 
-				INTO 					@archival_config_id,@schemaname,@tablename,@batchsize,@override_history_data_retention_days,@PurgeOnly,@filters,@source_database_name,
-				@destination_database_name,@lookupName 
+
+			--- Execution logging STARTS--	
+			IF @total_number_of_records_affected > 0 -- Log only if the total number of records affected is greater than 0
+			BEGIN
+				INSERT INTO dbo.Archival_Execution_Log(description_text,date_created)
+				SELECT 'Number of records affected for the table - ' + @schemaname + '.'+@tablename + '=' + cast(@total_number_of_records_affected as varchar(10)) + ' Filter Condition - ' + @predicate_sql , getdate()
+			END 
+			--- Execution logging ENDS--
+		FETCH NEXT FROM 
+				tableCursor 
+			INTO 					
+			@archival_config_id,@schemaname,@tablename,@override_batchsize,@override_history_data_retention_days,@PurgeOnly,@filters,
+			@source_database_name,@destination_database_name,@lookupName 
+
+			PRINT 'Total Number of rows affected - ' + cast(@total_number_of_records_affected as varchar(10))
+
+
+
 END-- Cursor Loop End
+DROP TABLE #temp_Archival_Execution_Log -- Drop the temp table 
 CLOSE tableCursor
 DEALLOCATE tableCursor				
 							
