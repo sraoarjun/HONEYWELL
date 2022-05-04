@@ -72,10 +72,10 @@ GO
 INSERT INTO dbo.Lookups(Name,Description,Value,DisplayName,Application,Asset,Lookup_PK_ID,LookupType_PK_ID,LookupValueDataType,ApplicationDisplayName)
 SELECT 
 
-	'PurgeOperation_ON_OFF',
-	'Whether the Purge is enabled or not',
-	'ON',
-	'PurgeOperation_ON_OFF',
+	'Enable_Purge_Operation',
+	'Set to True,to enable Purge,otherwise set to False.',
+	'True',
+	'Enable_Purge_Operation',
 	'ALL',
 	null ,
 	NEWID(),
@@ -92,7 +92,7 @@ INSERT INTO dbo.Lookups(Name,Description,Value,DisplayName,Application,Asset,Loo
 SELECT 
 
 	'Batch_Size',
-	'What is the batch size for the purge operation',
+	'The batch size for the purge operation',
 	'5000',
 	'Batch_Size',
 	'ALL',

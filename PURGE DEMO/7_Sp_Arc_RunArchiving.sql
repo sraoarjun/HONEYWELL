@@ -47,9 +47,9 @@ declare @total_number_of_records_affected int = 0
 SET NOCOUNT ON 
 
 
-set @purgeOperation_ON_OFF = (select [Value] from dbo.Lookups where name = 'PurgeOperation_ON_OFF')
+set @purgeOperation_ON_OFF = (select [Value] from dbo.Lookups where name = 'Enable_Purge_Operation')
 
-IF @purgeOperation_ON_OFF <> 'ON'
+IF @purgeOperation_ON_OFF <> 'True'
 BEGIN
 	PRINT 'Purge Operation has been set to OFF'
 	RETURN ;
