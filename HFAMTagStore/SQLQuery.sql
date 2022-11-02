@@ -169,10 +169,13 @@ exec sp_pkeys 'Analytics_Inst_NARJobRuns','HFAMSchema1'
 exec sp_pkeys 'Inst_JobRunsStatusHistory','HFAMSchema1'
 
 
-update dbo.Purge_Config set history_retention_days_override = 437 
+
+update dbo.Purge_Config set history_retention_days_override = 440 where history_retention_days_override = 180
+
+update dbo.Purge_Config set history_retention_days_override = 180 where history_retention_days_override = 440
 
 
-update dbo.Purge_Config set purge_status = 1 
+update dbo.Purge_Config set purge_status = 1 where purge_status = 0
 
 select purge_status,purge_config_id,history_retention_days_override,table_name from dbo.Purge_Config
 
@@ -218,6 +221,7 @@ select * from HFAMSchema1.Analytics_Inst_NARJobRuns
 D10B1AB7-C429-43A1-B04D-CD2B0DDCE9A8
 D10B1AB7-C429-43A1-B04D-CD2B0DDCE9A8
 
+select DATEDIFF(day,getdate(),'2021-08-21 00:01:00.000')
 
 
 2021-07-01 00:05:00.000
@@ -226,3 +230,46 @@ D10B1AB7-C429-43A1-B04D-CD2B0DDCE9A8
 
 select count(1) as cnt from HFAMSchema1.Analytics_Staged_AlarmInstances a join HFAMSchema1.Analytics_Inst_NARJobRuns b 
  on a.JobRunId = b.JobRunId where b.JobStartTime < dateadd(day,-10,getdate())
+
+ GO
+
+
+
+
+ 
+select purge_status,purge_config_id,history_retention_days_override,table_name from dbo.Purge_Config
+
+exec dbo.usp_StartPurge
+
+
+select dbo.udf_GetHoursAndMinutes(GETDATE(),'02:00')
+
+
+
+select purge_status,purge_config_id,history_retention_days_override,table_name from dbo.Purge_Config
+
+
+select * from dbo.Purge_Config
+select * from dbo.Purge_Settings_Config
+
+
+select * from dbo.Purge_Error_Log
+
+select * from dbo.Purge_Execution_Log
+
+select count(1) as cnt from HFAMSchema1.Analytics_Inst_NARJobRunResults  -- 40
+select count(1) as cnt from HFAMSchema1.Analytics_Staged_DistinctAlarms --40
+select count(1) as cnt from HFAMSchema1.Analytics_Staged_AlarmInstances --18702
+select count(1) as cnt from HFAMSchema1.Analytics_Inst_NARJobRuns -- 2
+select count(1) as cnt from HFAMSChema1.Logs_CommentsHistoryLogs -- 0
+select count(1) as cnt from HFAMSChema1.Logs_EnforcementSessionLogs -- 0 
+select count(1) as cnt from HFAMSChema1.Logs_ParamEnforcementLogs -- 0 
+
+
+Begin tran
+
+exec dbo.usp_StartPurge
+
+rollback tran
+
+dbcc opentran

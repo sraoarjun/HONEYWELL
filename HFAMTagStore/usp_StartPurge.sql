@@ -77,7 +77,7 @@ FROM
 WHERE 
 	purge_config_id >= @start_purge_config_id
 --WHERE purge_config_id = 1
---and purge_config_id not in (8)
+and purge_config_id not in (8)
 --and purge_config_id = 3
 order by 
 	purge_config_id asc;
@@ -160,27 +160,23 @@ set @pk_columnname = (select distinct C.COLUMN_NAME FROM
 								
 				SET @total_number_of_records_affected = 0 
 				
-				------debug statements-- STARTS-----
-				print @insert_sql
-				------debug statements-- END--- 
-		
-				------debug statements-- STARTS-----
+				
 				IF @pk_columnname is null 
 				BEGIN
-					PRINT 'No PK found for the table - ' + @tablename
+						PRINT 'Purge Config ID -' + cast(@purge_config_id as varchar(1))
+						PRINT 'No PK found for the table - ' + @tablename
 						EXEC dbo.usp_delete_from_source_without_pk @purge_config_id,@batch_size ,@schemaname,@tablename,@filters,@predicate_sql
 				END 
-				------debug statements-- END--- 		
-
-			IF @pk_columnname is not null 
-			BEGIN
+				
+		IF @pk_columnname is not null 
+		BEGIN
 				SET @purge_status = 0 
-				PRINT 'Purge Config -' + cast(@purge_config_id as varchar(1))
+				PRINT 'Purge Config ID -' + cast(@purge_config_id as varchar(1))
 				-- Mark the status to be in-Progress
 				UPDATE dbo.Purge_Config set purge_status = @purge_status where purge_config_id = @purge_config_id
 				---- Process the records  (Purging of the records starts here)
 				WHILE (1=1)
-						BEGIN
+					BEGIN
 							-- If current time is greater than the job end time 
 							IF GETDATE()  >= @purge_job_end_time
 							BEGIN
@@ -220,22 +216,20 @@ set @pk_columnname = (select distinct C.COLUMN_NAME FROM
 							INSERT INTO dbo.Purge_Error_Log(purge_config_id,error_description,error_date)
 								SELECT @purge_config_id, @error_msg ,GETDATE()
 
-							END CATCH 
-							PRINT 'Number of rows affected - ' + cast(@numOfRowsAffected as varchar(10))
-
-						END -- While Loop End
+						END CATCH 
+							
+						PRINT 'Number of rows affected - ' + cast(@numOfRowsAffected as varchar(10))
+				END-- While Loop End
 				--Mark the final Purge Status
-					PRINT 'Purge Status - ' + cast (@purge_status as varchar(1))
-					UPDATE dbo.Purge_Config set purge_status = @purge_status where purge_config_id = @purge_config_id
-
-				END -- If @pk_columnName is not null
+				UPDATE dbo.Purge_Config set purge_status = @purge_status where purge_config_id = @purge_config_id
+				PRINT 'Total number of rows affected - ' + cast(@total_number_of_records_affected as varchar(10))
+		END -- If @pk_columnName is not null
 
 	FETCH NEXT FROM 
 			tableCursor 
-	INTO 					
-		@purge_config_id,@schemaname,@tablename,@filters,@history_data_retention_days_override,@lookupName  
+	INTO @purge_config_id,@schemaname,@tablename,@filters,@history_data_retention_days_override,@lookupName  
 
-		PRINT 'Total number of rows affected - ' + cast(@total_number_of_records_affected as varchar(10))
+		--PRINT 'Total number of rows affected - ' + cast(@total_number_of_records_affected as varchar(10))
 		IF @total_number_of_records_affected > 0 -- Log only if the total number of records affected is greater than 0
 		BEGIN
 			INSERT INTO dbo.Purge_Execution_Log(description_text,purge_config_id,date_created)
@@ -278,14 +272,12 @@ AS
 		BEGIN CATCH
 			ROLLBACK TRAN T2
 				SET @purge_status = 0;
-				PRINT 'Error occured for Purge config id -' + cast(@purge_config_id as varchar(10))
+				PRINT 'Error occured for Purge Config ID -' + cast(@purge_config_id as varchar(10))
 				SET @error_msg = 'Error Procedure - ' + ISNULL(ERROR_PROCEDURE(),'usp_delete_from_source_without_pk') + ' '+ 'Error Line - ' + cast(ERROR_LINE() as varchar) + ' ' + 'Error Message - ' + ERROR_MESSAGE()
 				INSERT INTO dbo.Purge_Error_Log(purge_config_id,error_description,error_date)
 				SELECT @purge_config_id, @error_msg ,GETDATE()
 				BREAK;
 		END CATCH
-
-		PRINT '@Deleterowcount -' +cast(@Deleterowcount as varchar(10))
 		SET @total_number_of_records_affected += @Deleterowcount; 
 		INSERT INTO dbo.Purge_Execution_Log(description_text,purge_config_id,date_created)
 		SELECT 'Number of records affected for the table - ' + @schemaname + '.'+@tablename + ' = ' + cast(@Deleterowcount as varchar(10)) + ' Filter Condition - ' + @predicate_sql ,@purge_config_id, getdate()

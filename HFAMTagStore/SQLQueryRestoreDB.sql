@@ -1,3 +1,7 @@
+USE [master]
+GO
+DROP DATABASE [HFAMTagStore1]
+GO
 
 RESTORE FILELISTONLY FROM DISK = 'C:\ARJUN\HoneyWell\ALARMS\DynArchive\Purging\HFAMTagStore\HFAMTagStore.bak' WITH FILE = 1
 GO
