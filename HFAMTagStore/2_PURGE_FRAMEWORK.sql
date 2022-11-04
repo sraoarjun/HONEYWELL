@@ -74,8 +74,8 @@ CREATE TABLE [dbo].[Purge_Config]
 	table_name varchar(100),
 	filters varchar(4000),
 	history_retention_days_override int,
-	lookupName varchar(200),
 	purge_status tinyint,
+	is_enabled bit ,
 	db_datetime_last_updated datetime,
 )
 GO
@@ -402,7 +402,6 @@ declare @total_number_of_records_affected int = 0
 declare @history_data_retention_days int 
 declare @history_data_retention_cut_off_date_string varchar(100)
 declare @purgeOperation_Enabled_Disabled char(5)
-declare @lookupName varchar(250)
 declare @start_purge_config_id int = 0
 declare @error_msg varchar(max)
 declare @purge_status tinyint
@@ -437,7 +436,7 @@ SET @purge_job_end_time = dbo.udf_GetHoursAndMinutes(@purge_job_start_time,@job_
 declare tableCursor cursor FAST_FORWARD FOR
 
 SELECT  
-	purge_config_id , table_schema,table_name,filters,lookupName 
+	purge_config_id , table_schema,table_name,filters
 FROM 
 	dbo.Purge_Config
 WHERE 
@@ -449,7 +448,7 @@ OPEN tableCursor
 FETCH NEXT FROM 
 			tableCursor 
 	INTO  
-				@purge_config_id,@schemaname,@tablename,@filters,@lookupName 
+				@purge_config_id,@schemaname,@tablename,@filters
 
 WHILE @@FETCH_STATUS = 0
           BEGIN
@@ -593,7 +592,7 @@ set @pk_columnname = (select distinct C.COLUMN_NAME FROM
 	FETCH NEXT FROM 
 			tableCursor 
 	INTO 					
-		@purge_config_id,@schemaname,@tablename,@filters,@lookupName 
+		@purge_config_id,@schemaname,@tablename,@filters 
 
 		PRINT 'Total number of rows affected - ' + cast(@total_number_of_records_affected as varchar(10))
 		IF @total_number_of_records_affected > 0 -- Log only if the total number of records affected is greater than 0
@@ -672,7 +671,7 @@ GO
 --1 Analytics_Inst_NARJobRunResults
 SET IDENTITY_INSERT [dbo].[Purge_Config] ON 
 GO
-INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override],[lookupName], [purge_status], [db_datetime_last_updated]) VALUES (1, N'Purging the Analytics_Inst_NARJobRunResults table', N'HFAMSchema1', N'Analytics_Inst_NARJobRunResults', N'inner join HFAMSchema1.Analytics_Inst_NARJobRuns on HFAMSchema1.Analytics_Inst_NARJobRunResults.JobRunId = HFAMSchema1.Analytics_Inst_NARJobRuns.JobRunId where HFAMSchema1.Analytics_Inst_NARJobRuns.JobStartTime <=  {Date_Parameter}',180,N'Analytics_Staged_AlarmInstances_Retention_Days', 1, GETDATE())
+INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override], [purge_status],[is_Enabled], [db_datetime_last_updated]) VALUES (1, N'Purging the Analytics_Inst_NARJobRunResults table', N'HFAMSchema1', N'Analytics_Inst_NARJobRunResults', N'inner join HFAMSchema1.Analytics_Inst_NARJobRuns on HFAMSchema1.Analytics_Inst_NARJobRunResults.JobRunId = HFAMSchema1.Analytics_Inst_NARJobRuns.JobRunId where HFAMSchema1.Analytics_Inst_NARJobRuns.JobStartTime <=  {Date_Parameter}',730,1,1,GETDATE())
 GO
 SET IDENTITY_INSERT [dbo].[Purge_Config] OFF
 GO
@@ -680,60 +679,70 @@ GO
 --2 Analytics_Staged_DistinctAlarms
 SET IDENTITY_INSERT [dbo].[Purge_Config] ON 
 GO
-INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override], [lookupName], [purge_status], [db_datetime_last_updated]) VALUES (2, N'Purging the Analytics_Staged_DistinctAlarms table', N'HFAMSchema1', N'Analytics_Staged_DistinctAlarms', N'join HFAMSchema1.Analytics_Inst_NARJobRuns on HFAMSchema1.Analytics_Staged_DistinctAlarms
-.JobRunId = HFAMSchema1.Analytics_Inst_NARJobRuns.JobRunId WHERE HFAMSchema1.Analytics_Inst_NARJobRuns.JobStartTime < {Date_Parameter} ',180,N'Analytics_Staged_AlarmInstances_Retention_Days', 1, GETDATE())
+INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override],  [purge_status],[is_Enabled], [db_datetime_last_updated]) VALUES (2, N'Purging the Analytics_Staged_DistinctAlarms table', N'HFAMSchema1', N'Analytics_Staged_DistinctAlarms', N'join HFAMSchema1.Analytics_Inst_NARJobRuns on HFAMSchema1.Analytics_Staged_DistinctAlarms
+.JobRunId = HFAMSchema1.Analytics_Inst_NARJobRuns.JobRunId WHERE HFAMSchema1.Analytics_Inst_NARJobRuns.JobStartTime < {Date_Parameter} ',180,1,1,GETDATE())
 GO
 SET IDENTITY_INSERT [dbo].[Purge_Config] OFF
 GO
-
 
 --3 Analytics_Staged_AlarmInstances
 SET IDENTITY_INSERT [dbo].[Purge_Config] ON 
 GO
-INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override], [lookupName], [purge_status], [db_datetime_last_updated]) VALUES (3, N'Purging the Analytics_Staged_AlarmInstances table', N'HFAMSchema1', N'Analytics_Staged_AlarmInstances', N'join HFAMSchema1.Analytics_Inst_NARJobRuns on HFAMSchema1.Analytics_Staged_AlarmInstances.JobRunId = HFAMSchema1.Analytics_Inst_NARJobRuns.JobRunId WHERE HFAMSchema1.Analytics_Inst_NARJobRuns.JobStartTime < {Date_Parameter} ',180,N'Analytics_Staged_AlarmInstances_Retention_Days', 1, GETDATE())
+INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override],  [purge_status],[is_Enabled], [db_datetime_last_updated]) VALUES (3, N'Purging the Analytics_Staged_AlarmInstances table', N'HFAMSchema1', N'Analytics_Staged_AlarmInstances', N'join HFAMSchema1.Analytics_Inst_NARJobRuns on HFAMSchema1.Analytics_Staged_AlarmInstances.JobRunId = HFAMSchema1.Analytics_Inst_NARJobRuns.JobRunId WHERE HFAMSchema1.Analytics_Inst_NARJobRuns.JobStartTime < {Date_Parameter} ',180,1,1,GETDATE())
 GO
 SET IDENTITY_INSERT [dbo].[Purge_Config] OFF
 GO
 
---4 Analytics_Inst_NARJobRuns
+--4 Inst_JobRunsStatusHistory
 SET IDENTITY_INSERT [dbo].[Purge_Config] ON 
 GO
-INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override], [lookupName], [purge_status], [db_datetime_last_updated]) VALUES (4, N'Purging the Analytics_Inst_NARJobRuns table', N'HFAMSchema1', N'Analytics_Inst_NARJobRuns', N'WHERE HFAMSchema1.Analytics_Inst_NARJobRuns.JobStartTime <= {Date_Parameter}',180,N'Analytics_Staged_AlarmInstances_Retention_Days', 1, GETDATE())
-GO
-SET IDENTITY_INSERT [dbo].[Purge_Config] OFF
-GO
-
-
---5 Logs_ParamEnforcementLogs
-SET IDENTITY_INSERT [dbo].[Purge_Config] ON 
-GO
-INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override], [lookupName], [purge_status], [db_datetime_last_updated]) VALUES (5, N'Purging the Logs_ParamEnforcementLogs table', N'HFAMSchema1', N'Logs_ParamEnforcementLogs', N'WHERE HFAMSchema1.Logs_ParamEnforcementLogs.DtTm <= {Date_Parameter}',365,NULL, 1, GETDATE())
+INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override],  [purge_status],[is_Enabled], [db_datetime_last_updated]) VALUES (4, N'Purging the Inst_JobRunsStatusHistory
+ table', N'HFAMSchema1', N'Inst_JobRunsStatusHistory
+', N'WHERE HFAMSchema1.Inst_JobRunsStatusHistory.UpdatedOn < {Date_Parameter} ',365,1,1,GETDATE())
 GO
 SET IDENTITY_INSERT [dbo].[Purge_Config] OFF
 GO
 
 
---6 Logs_EnforcementSessionLogs
+--5 Analytics_Inst_NARJobRuns
 SET IDENTITY_INSERT [dbo].[Purge_Config] ON 
 GO
-INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override], [lookupName], [purge_status], [db_datetime_last_updated]) VALUES (6, N'Purging the Logs_EnforcementSessionLogs table', N'HFAMSchema1', N'Logs_EnforcementSessionLogs', N'WHERE HFAMSchema1.Logs_EnforcementSessionLogs.DtTm <= {Date_Parameter}',365,NULL, 1, GETDATE())
+INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override],  [purge_status],[is_Enabled], [db_datetime_last_updated]) VALUES (5, N'Purging the Analytics_Inst_NARJobRuns table', N'HFAMSchema1', N'Analytics_Inst_NARJobRuns', N'WHERE HFAMSchema1.Analytics_Inst_NARJobRuns.JobStartTime <= {Date_Parameter}',730,1,1,GETDATE())
 GO
 SET IDENTITY_INSERT [dbo].[Purge_Config] OFF
 GO
 
 
---7 Logs_CommentsHistoryLogs
+--6 Logs_ParamEnforcementLogs
 SET IDENTITY_INSERT [dbo].[Purge_Config] ON 
 GO
-INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override], [lookupName], [purge_status], [db_datetime_last_updated]) VALUES (7, N'Purging the Logs_CommentsHistoryLogs table', N'HFAMSchema1', N'Logs_CommentsHistoryLogs', N'WHERE HFAMSchema1.Logs_CommentsHistoryLogs.DtTm <= {Date_Parameter}',365,NULL, 1, GETDATE())
+INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override],  [purge_status],[is_Enabled], [db_datetime_last_updated]) VALUES (6, N'Purging the Logs_ParamEnforcementLogs table', N'HFAMSchema1', N'Logs_ParamEnforcementLogs', N'WHERE HFAMSchema1.Logs_ParamEnforcementLogs.DtTm <= {Date_Parameter}',180,1,1,GETDATE())
 GO
 SET IDENTITY_INSERT [dbo].[Purge_Config] OFF
 GO
 
---7 SyncJobLogs
+
+--7 Logs_EnforcementSessionLogs
 SET IDENTITY_INSERT [dbo].[Purge_Config] ON 
 GO
-INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override], [lookupName], [purge_status], [db_datetime_last_updated]) VALUES (8, N'Purging the SyncJobLogs table', N'HFAMSchema1', N'SyncJobLogs', N'WHERE HFAMSchema1.SyncJobLogs.DtTime <= {Date_Parameter}',180,NULL, 1, GETDATE())
+INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override],  [purge_status],[is_Enabled], [db_datetime_last_updated]) VALUES (7, N'Purging the Logs_EnforcementSessionLogs table', N'HFAMSchema1', N'Logs_EnforcementSessionLogs', N'WHERE HFAMSchema1.Logs_EnforcementSessionLogs.DtTm <= {Date_Parameter}',180,1,1,GETDATE())
+GO
+SET IDENTITY_INSERT [dbo].[Purge_Config] OFF
+GO
+
+
+--8 Logs_CommentsHistoryLogs
+SET IDENTITY_INSERT [dbo].[Purge_Config] ON 
+GO
+INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override],  [purge_status],[is_Enabled], [db_datetime_last_updated]) VALUES (8, N'Purging the Logs_CommentsHistoryLogs table', N'HFAMSchema1', N'Logs_CommentsHistoryLogs', N'WHERE HFAMSchema1.Logs_CommentsHistoryLogs.DtTm <= {Date_Parameter}',180,1,1,GETDATE())
+GO
+SET IDENTITY_INSERT [dbo].[Purge_Config] OFF
+GO
+
+--9 SyncJobLogs
+SET IDENTITY_INSERT [dbo].[Purge_Config] ON 
+GO
+INSERT [dbo].[Purge_Config] ([purge_config_id], [description_text], [table_schema], [table_name], [filters],[history_retention_days_override],  [purge_status],[is_Enabled], [db_datetime_last_updated]) VALUES (9, N'Purging the SyncJobLogs table', N'HFAMSchema1', N'SyncJobLogs', N'WHERE HFAMSchema1.SyncJobLogs.DtTime <= {Date_Parameter}',180,1,1,GETDATE())
 GO
 SET IDENTITY_INSERT [dbo].[Purge_Config] OFF
 GO

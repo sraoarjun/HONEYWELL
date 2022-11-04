@@ -36,7 +36,6 @@ declare @history_data_retention_days_override int = null
 declare @history_data_retention_days int 
 declare @history_data_retention_cut_off_date_string varchar(100)
 declare @purgeOperation_Enabled_Disabled char(5)
-declare @lookupName varchar(250)
 declare @start_purge_config_id int = 0
 declare @error_msg varchar(max)
 declare @purge_status tinyint
@@ -71,14 +70,14 @@ SET @purge_job_end_time = dbo.udf_GetHoursAndMinutes(@purge_job_start_time,@job_
 declare tableCursor cursor FAST_FORWARD FOR
 
 SELECT  
-	purge_config_id , table_schema,table_name,filters,history_retention_days_override,lookupName 
+	purge_config_id , table_schema,table_name,filters,history_retention_days_override
 FROM 
 	dbo.Purge_Config
 WHERE 
 	purge_config_id >= @start_purge_config_id
 --WHERE purge_config_id = 1
-and purge_config_id not in (8)
---and purge_config_id = 3
+--and purge_config_id not in (8)
+
 order by 
 	purge_config_id asc;
 
@@ -86,7 +85,7 @@ OPEN tableCursor
 FETCH NEXT FROM 
 			tableCursor 
 	INTO  
-				@purge_config_id,@schemaname,@tablename,@filters,@history_data_retention_days_override,@lookupName 
+				@purge_config_id,@schemaname,@tablename,@filters,@history_data_retention_days_override 
 
 WHILE @@FETCH_STATUS = 0
           BEGIN
@@ -227,7 +226,7 @@ set @pk_columnname = (select distinct C.COLUMN_NAME FROM
 
 	FETCH NEXT FROM 
 			tableCursor 
-	INTO @purge_config_id,@schemaname,@tablename,@filters,@history_data_retention_days_override,@lookupName  
+	INTO @purge_config_id,@schemaname,@tablename,@filters,@history_data_retention_days_override 
 
 		--PRINT 'Total number of rows affected - ' + cast(@total_number_of_records_affected as varchar(10))
 		IF @total_number_of_records_affected > 0 -- Log only if the total number of records affected is greater than 0
